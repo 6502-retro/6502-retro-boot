@@ -4,9 +4,10 @@
 .autoimport
 .globalzp ptr1, bdma_ptr, lba_ptr
 
-.export boot_boot, bios_conin, bios_conout, bios_const
-.export bios_setdma, bios_setlba, bios_sdread, bios_sdwrite, bios_puts
-.export bios_prbyte
+.export boot_boot
+.if DEBUG=1
+    .export bios_prbyte, bios_printlba
+.endif
 .export error_code
 
 .macro crlf
@@ -121,18 +122,16 @@ load_from_sdcard:
     ldx #16             ; read 16 sectors
 @sector_loop:
     phx
-
     lda bdma+1
-    jsr bios_prbyte
-    lda #'-'
+
+.if DEBUG=0
+    lda #'.'
     jsr bios_conout
+.endif
 
     lda bdma+0
     ldx bdma+1
     jsr bios_setdma     ; set dma
-
-    jsr bios_printlba
-    crlf
 
     jsr sdcard_read_sector ; read the sector
 
@@ -150,22 +149,12 @@ load_from_sdcard:
     jsr bios_puts
     jsr sn_beep
 
-    crlf
-    lda $FFFC
-    jsr bios_prbyte
-    lda $FFFD
-    jsr bios_prbyte
     ; JUMP TO THE RESET VECTOR NOW IN TOP OF RAM. (Behind rom)
     jmp ($FFFC)
 
-bios_conin:
-    jmp acia_getc
 
 bios_conout:
     jmp acia_putc
-
-bios_const:
-    jmp acia_getc_nw
 
 bios_setdma:
     sta bdma_ptr + 0
@@ -192,11 +181,6 @@ bios_sdread:
     jsr sdcard_read_sector
     rts
 
-bios_sdwrite:
-    jsr set_sdbuf_ptr
-    jsr sdcard_write_sector
-    rts
-
 bios_puts:
     sta ptr1 + 0
     stx ptr1 + 1
@@ -210,6 +194,7 @@ bios_puts:
 @done:
     rts
 
+.if DEBUG=1
 bios_printlba:
     pha
     phx
@@ -249,7 +234,7 @@ echo:
     jsr acia_putc
     pla             ;*Restore A
     rts             ;*Done, over and out...
-
+.endif
 ;---- Helper functions -------------------------------------------------------
 set_sdbuf_ptr:
     lda bdma + 1
@@ -265,7 +250,10 @@ zero_lba:
     stz sector_lba + 3 ; always zero
     rts
 
-start_message: .byte 10,13,"BOOT LOADER STARTING...",10,13,0
+start_message: .byte 10,13,"6502-Retro Bootloader Utility",10,13
+                .byte      "-----------------------------",10,13
+                .byte      "Loading OS from Sectors 1-17 into RAM at 0xE000",10,13,0
+
 done_message: .byte 10,13,"BOOT LOADER FINISHED. JUMPING TO OS",10,13,0
 
 .segment "SYSTEM"
@@ -275,5 +263,4 @@ error_code: .byte 0 ; 230
 
 .bss
 bdma:       .word 0
-sdcard_lba: .dword 0
 .rodata

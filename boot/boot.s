@@ -8,7 +8,6 @@
 .if DEBUG=1
     .export bios_prbyte, bios_printlba
 .endif
-.export error_code
 
 .macro crlf
     lda #10
@@ -84,6 +83,7 @@ bootloader:
 @L1:
     phx
     jsr sdcard_init
+    bcc @error
     plx
     dex
     bne @L1
@@ -96,7 +96,6 @@ bootloader:
     dex
     bne @L2
     jsr zerobss
-    jsr zero_lba
 
     ; DISABLE ROM
     lda #%01000000
@@ -105,6 +104,23 @@ bootloader:
     lda #%01000000 ; make bit 6 an output thus driving a 0.
     ora via_ddra
     sta via_ddra
+
+    jmp load_from_sdcard
+
+@error:
+    lda #1          ; INIT ERROR
+    ; fall through
+;
+; If anything goes wrong endup here.
+error:
+    adc #'0'
+    pha
+    lda #<error_message
+    ldx #>error_message
+    jsr bios_puts
+    pla
+    jsr bios_conout
+    jmp *               ; STUCK Spinloop.
 
     ; COPY SECTORS FROM SDCARD TO TOP OF RAM (Behind rom)
     ; ROM IS NOW DISABLED
@@ -122,7 +138,6 @@ load_from_sdcard:
     ldx #16             ; read 16 sectors
 @sector_loop:
     phx
-    lda bdma+1
 
 .if DEBUG=0
     lda #'.'
@@ -134,6 +149,7 @@ load_from_sdcard:
     jsr bios_setdma     ; set dma
 
     jsr sdcard_read_sector ; read the sector
+    bcc @error
 
     inc bdma+1
     inc bdma+1          ; Add two pages to bdma
@@ -151,7 +167,9 @@ load_from_sdcard:
 
     ; JUMP TO THE RESET VECTOR NOW IN TOP OF RAM. (Behind rom)
     jmp ($FFFC)
-
+@error:
+    lda #2              ; ERROR READING SECTOR FROM SDCARD
+    jmp error
 
 bios_conout:
     jmp acia_putc
@@ -162,23 +180,6 @@ bios_setdma:
     stx bdma_ptr + 1
     stx bdma + 1
     clc
-    rts
-
-bios_setlba:
-    sta blba_ptr + 0
-    stx blba_ptr + 1
-    ldy #3
-@L1:
-    lda (blba_ptr),y
-    sta sector_lba,y
-    dey
-    bpl @L1
-    clc
-    rts
-
-bios_sdread:
-    jsr set_sdbuf_ptr
-    jsr sdcard_read_sector
     rts
 
 bios_puts:
@@ -235,14 +236,8 @@ echo:
     pla             ;*Restore A
     rts             ;*Done, over and out...
 .endif
-;---- Helper functions -------------------------------------------------------
-set_sdbuf_ptr:
-    lda bdma + 1
-    sta bdma_ptr + 1
-    lda bdma + 0
-    sta bdma_ptr + 0
-    rts
 
+;---- Helper functions -------------------------------------------------------
 zero_lba:
     stz sector_lba + 0 ; sector inside file
     stz sector_lba + 1 ; file number
@@ -255,11 +250,11 @@ start_message: .byte 10,13,"6502-Retro Bootloader Utility",10,13
                 .byte      "Loading OS from Sectors 1-17 into RAM at 0xE000",10,13,0
 
 done_message: .byte 10,13,"BOOT LOADER FINISHED. JUMPING TO OS",10,13,0
+error_message: .byte 10,13,"*********** ERROR ***********",10,13
+                .byte      "An error occurred.  Error code is: ",0
 
 .segment "SYSTEM"
 ; dispatch function, will be relocated on boot into SYSRAM
-error_code: .byte 0 ; 230
-
 
 .bss
 bdma:       .word 0

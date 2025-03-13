@@ -2,7 +2,7 @@
 .include "io.inc"
 .autoimport
 .globalzp ptr1
-.export acia_init, acia_putc
+.export acia_init, acia_putc, acia_getc, acia_getc_nw
 
 ; vim: set ft=asm_ca65 sw=4 ts=4 et:
 ACIA_PARITY_DISABLE          = %00000000
@@ -23,6 +23,25 @@ acia_init:
     sta acia_command
     lda #$10
     sta acia_control
+    rts
+
+acia_getc:
+@wait_rxd_full:
+    lda acia_status
+    and #$08
+    beq @wait_rxd_full
+    lda acia_data
+    rts
+
+acia_getc_nw:
+    lda acia_status
+    and #$08
+    beq @done
+    lda acia_data
+    sec
+    rts
+@done:
+    clc
     rts
 
 acia_putc:

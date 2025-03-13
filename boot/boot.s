@@ -63,6 +63,15 @@ boot_boot:
     iny
     bne @L3
 @L4:
+    ; copy SYSTEM code into RUN area
+    ldx #<__SYSTEM_SIZE__
+@L5:
+    lda __SYSTEM_LOAD__ - 1,x
+    sta __SYSTEM_RUN__ -1,x
+    dex
+    bne @L5
+    jsr zerobss
+
     ; fall through
     jmp __BOOTLDR_RUN__
 
@@ -71,6 +80,11 @@ boot_boot:
 .segment "BOOTLDR"
 
 bootloader:
+    ldx #$ff
+    tsx
+    cld
+    sei
+
     jsr via_init
     jsr acia_init
     jsr sn_start
@@ -88,24 +102,15 @@ bootloader:
     dex
     bne @L1
 
-    ; copy SYSTEM code into RUN area
-    ldx #<__SYSTEM_SIZE__
-@L2:
-    lda __SYSTEM_LOAD__ - 1,x
-    sta __SYSTEM_RUN__ -1,x
-    dex
-    bne @L2
-    jsr zerobss
-
     ; DISABLE ROM
-    lda #%01000000
-    ora via_porta
+    lda #%10111111
+    and via_porta
     sta via_porta
     lda #%01000000 ; make bit 6 an output thus driving a 0.
     ora via_ddra
     sta via_ddra
 
-    jmp load_from_sdcard
+    jmp menu
 
 @error:
     lda #1          ; INIT ERROR
@@ -121,6 +126,24 @@ error:
     pla
     jsr bios_conout
     jmp *               ; STUCK Spinloop.
+
+
+; ---- MENU -----------------------------------------------------------------
+menu:
+    lda #<slice_select_message
+    ldx #>slice_select_message
+    jsr bios_puts
+    jsr acia_getc
+    cmp #'1'
+    beq load_from_sdcard
+    cmp #'x'
+    beq load_from_xmodem
+    bra menu
+
+; expects file to be located at E000
+load_from_xmodem:
+    jsr _xmodem
+    jmp ($FFFC)
 
     ; COPY SECTORS FROM SDCARD TO TOP OF RAM (Behind rom)
     ; ROM IS NOW DISABLED
@@ -245,12 +268,18 @@ zero_lba:
     stz sector_lba + 3 ; always zero
     rts
 
-start_message: .byte 10,13,"6502-Retro Bootloader Utility",10,13
+start_message:  .byte 10,13,"6502-Retro Bootloader Utility",10,13
                 .byte      "-----------------------------",10,13
                 .byte      "Loading OS from Sectors 1-17 into RAM at 0xE000",10,13,0
 
+slice_select_message:   .byte 10,13,"Enter desired slice:"
+                        .byte 10,13,"1 - 6502-retro-os"
+                        .byte 10,13,"X - Load from XMODEM"
+                        .byte 10,13,"> ",0
+
 done_message: .byte 10,13,"BOOT LOADER FINISHED. JUMPING TO OS",10,13,0
-error_message: .byte 10,13,"*********** ERROR ***********",10,13
+
+error_message:  .byte 10,13,"*********** ERROR ***********",10,13
                 .byte      "An error occurred.  Error code is: ",0
 
 .segment "SYSTEM"

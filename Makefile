@@ -29,6 +29,7 @@ boot_SOURCES = \
 	       boot/sn76489.s \
 	       boot/zerobss.s \
 	       boot/via.s \
+	       boot/xm.s \
 	       boot/vectors.s \
 
 boot_OBJS = $(addprefix $(BUILD_DIR)/, $(boot_SOURCES:.s=.o))

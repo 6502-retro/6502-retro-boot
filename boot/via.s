@@ -18,8 +18,6 @@ ROM_SWITCH_ON   = %01000000 ; ORA
 ROM_SWITCH_OFF  = %10111111 ; AND
 
 .code
-
-.segment "BOOTLDR"
 ; WE will DISABLE rom by making bit 6 on DDRA an OUTPUT.
 ; FOR NOW though, it's floating, so pulled up by a resistor.
 via_init:
@@ -29,6 +27,8 @@ via_init:
     sta via_ddra
     rts
 
+
+.segment "BOOTLDR"
 led_on:
     lda via_porta
     ora #LED_ON

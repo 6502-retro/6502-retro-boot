@@ -125,7 +125,7 @@ error:
     jsr bios_puts
     pla
     jsr bios_conout
-    jmp *               ; STUCK Spinloop.
+    jmp menu
 
 
 ; ---- MENU -----------------------------------------------------------------
@@ -269,8 +269,7 @@ zero_lba:
     rts
 
 start_message:  .byte 10,13,"6502-Retro Bootloader Utility",10,13
-                .byte      "-----------------------------",10,13
-                .byte      "Loading OS from Sectors 1-17 into RAM at 0xE000",10,13,0
+                .byte      "-----------------------------",10,13,0
 
 slice_select_message:   .byte 10,13,"Enter desired slice:"
                         .byte 10,13,"1 - 6502-retro-os"

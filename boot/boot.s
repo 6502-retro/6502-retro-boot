@@ -156,7 +156,7 @@ load_from_sdcard:
     sta sector_lba+0
     stz sector_lba+1
     stz sector_lba+2
-    stz sector_lba+2
+    stz sector_lba+3
 
     ldx #16             ; read 16 sectors
 @sector_loop:

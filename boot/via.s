@@ -5,18 +5,6 @@
 
 .export via_init, led_on, led_off, get_button
 
-SD_SCK          = %00000001
-SD_CS           = %00000010
-SN_WE           = %00000100
-SN_READY        = %00001000
-ROMSW           = %01000000
-SD_MOSI         = %10000000
-LED_ON          = %00010000 ; ORA
-LED_OFF         = %11101111 ; AND
-BUTTON          = %00100000 ; MASK
-ROM_SWITCH_ON   = %01000000 ; ORA
-ROM_SWITCH_OFF  = %10111111 ; AND
-
 .code
 ; WE will DISABLE rom by making bit 6 on DDRA an OUTPUT.
 ; FOR NOW though, it's floating, so pulled up by a resistor.

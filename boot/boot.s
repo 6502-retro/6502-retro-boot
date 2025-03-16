@@ -136,6 +136,8 @@ menu:
     jsr acia_getc
     cmp #'1'
     beq load_from_sdcard
+    cmp #'m'
+    beq load_monitor_rom
     cmp #'x'
     beq load_from_xmodem
     bra menu
@@ -143,6 +145,16 @@ menu:
 ; expects file to be located at E000
 load_from_xmodem:
     jsr _xmodem
+    jmp ($FFFC)
+
+load_monitor_rom:
+    lda #1
+    sta rombankreg
+
+    lda via_ddra
+    and #ROM_SWITCH_OFF
+    sta via_ddra
+
     jmp ($FFFC)
 
     ; COPY SECTORS FROM SDCARD TO TOP OF RAM (Behind rom)
@@ -273,6 +285,7 @@ start_message:  .byte 10,13,"6502-Retro Bootloader Utility",10,13
 
 slice_select_message:   .byte 10,13,"Enter desired slice:"
                         .byte 10,13,"1 - 6502-retro-os"
+                        .byte 10,13,"M - Monitor ROM"
                         .byte 10,13,"X - Load from XMODEM"
                         .byte 10,13,"> ",0
 

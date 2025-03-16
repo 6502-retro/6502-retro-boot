@@ -13,11 +13,6 @@
 .globalzp bdma_ptr
 .export sector_lba, sdcard_init, sdcard_read_sector
 
-SD_SCK          = %00000001
-SD_CS           = %00000010
-SN_WE           = %00000100
-SD_MOSI         = %10000000
-
 .macro deselect
         lda     #(SD_CS|SD_MOSI|SN_WE)        ; deselect sdcard
         sta     via_porta

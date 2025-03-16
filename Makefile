@@ -48,11 +48,18 @@ $(BUILD_DIR)/rom.raw: $(boot_OBJS)
 	@mkdir -p $$(dirname $@)
 	$(LD) -C config/$(CFG) $^ -o $@ -m $(BUILD_DIR)/rom.map -Ln $(BUILD_DIR)/rom.sym
 	$(RELIST) $(BUILD_DIR)/rom.map $(BUILD_DIR)/boot
+	$(LOADTRIM) $(BUILD_DIR)/rom.raw $(BUILD_DIR)/rom.bin E000
 
 $(BUILD_DIR)/ram.bin: $(boot_OBJS)
 	@mkdir -p $$(dirname $@)
 	$(LD) -C config/$(RAM_CFG) $^ -o $(BUILD_DIR)/ram.raw -m $(BUILD_DIR)/ram.map -Ln $(BUILD_DIR)/ram.sym
 	$(LOADTRIM) $(BUILD_DIR)/ram.raw $@ $(SFM_LOAD_ADDR)
+
+$(BUILD_DIR)/rom_load.bin: $(boot_OBJS)
+	@mkdir -p $$(dirname $@)
+	$(LD) -C config/rom_load.cfg $^ -o $(BUILD_DIR)/rom_load.raw -m $(BUILD_DIR)/rom_load.map -Ln $(BUILD_DIR)/rom_load.sym
+	$(RELIST) $(BUILD_DIR)/rom_load.map $(BUILD_DIR)/boot
+	$(LOADTRIM) $(BUILD_DIR)/rom_load.raw $@ E000
 
 grep:
 	grep boot_boot $(BUILD_DIR)/ram.sym

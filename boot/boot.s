@@ -103,11 +103,12 @@ bootloader:
     bne @L1
 
     ; DISABLE ROM
-    lda #%10111111
-    and via_porta
+    lda via_porta
+    and #%10111111
     sta via_porta
-    lda #%01000000 ; make bit 6 an output thus driving a 0.
-    ora via_ddra
+
+    lda via_ddra
+    ora #%01000000 ; make bit 6 an output thus driving a 0.
     sta via_ddra
 
     jmp menu

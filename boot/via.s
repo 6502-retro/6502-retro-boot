@@ -8,6 +8,8 @@
 .code
 ; WE will DISABLE rom by making bit 6 on DDRA an OUTPUT.
 ; FOR NOW though, it's floating, so pulled up by a resistor.
+
+.segment "BOOTLDR"
 via_init:
     lda #(SD_SCK|SD_CS|SN_WE|SD_MOSI)
     sta via_porta
@@ -15,8 +17,6 @@ via_init:
     sta via_ddra
     rts
 
-
-.segment "BOOTLDR"
 led_on:
     lda via_porta
     ora #LED_ON

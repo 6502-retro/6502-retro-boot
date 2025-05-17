@@ -138,7 +138,7 @@ spi_rw_byte:
 ; first byte of result in A, clobbers: Y
 ;-----------------------------------------------------------------------------
 send_cmd:
-        jsr sdcmd_start
+        ;jsr sdcmd_start
         ; Send the 6 cmdbuf bytes
         lda cmd_idx
         jsr spi_write
@@ -162,12 +162,12 @@ send_cmd:
         beq @1
 
         ; Success
-        jsr sdcmd_end
+        ;jsr sdcmd_end
         sec
         rts
 
 @error: ; Error
-        jsr sdcmd_end
+        ;jsr sdcmd_end
         clc
         rts
 
@@ -279,9 +279,9 @@ sdcard_init:
         bne     @clockloop
 
         ; Enter idle state
-        jsr sdcmd_start
+        ;jsr sdcmd_start
         send_cmd_inline 0, 0
-        jsr sdcmd_end
+        ;jsr sdcmd_end
         bcs @2
         jmp @error
 @2:
@@ -290,9 +290,9 @@ sdcard_init:
         jmp @error
 @3:
         ; SDv2? (SDHC/SDXC)
-        jsr sdcmd_start
+        ;jsr sdcmd_start
         send_cmd_inline 8, $1AA
-        jsr sdcmd_end
+        ;jsr sdcmd_end
         bcs @4
         jmp @error
 @4:
@@ -307,15 +307,15 @@ sdcard_init:
         jsr spi_read
 
         ; Wait for card to leave idle state
-@6:     jsr sdcmd_start
+@6:     ;jsr sdcmd_start
         send_cmd_inline 55, 0
-        jsr sdcmd_end
+        ;jsr sdcmd_end
         bcs @7
         bra @error
 @7:
-        jsr sdcmd_start
+        ;jsr sdcmd_start
         send_cmd_inline 41, $40000000
-        jsr sdcmd_end
+        ;jsr sdcmd_end
         bcs @8
         bra @error
 @8:
@@ -323,9 +323,9 @@ sdcard_init:
         bne @6
 
         ; ; Check CCS bit in OCR register
-        jsr sdcmd_start
+        ;jsr sdcmd_start
         send_cmd_inline 58, 0
-        jsr sdcmd_end
+        ;jsr sdcmd_end
         cmp #0
         jsr spi_read
         and #$40        ; Check if this card supports block addressing mode
@@ -384,13 +384,13 @@ sdcard_read_sector:
         lda #0
         jsr debug_sector_lba
 .endif
-        jsr sdcmd_start
+        ;jsr sdcmd_start
         ; Send READ_SINGLE_BLOCK command
         lda #($40 | 17)
         sta cmd_idx
         lda #1
         sta cmd_crc
-        jsr sdcmd_start
+        ;jsr sdcmd_start
         jsr send_cmd
 
         ; Wait for start of data packet
@@ -405,7 +405,7 @@ sdcard_read_sector:
         bne @1
 
         ; Timeout error
-        jsr sdcmd_end
+        ;jsr sdcmd_end
         deselect
         clc
         rts
@@ -429,7 +429,7 @@ sdcard_read_sector:
         jsr spi_read
         jsr spi_read
 
-        jsr sdcmd_end
+        ;jsr sdcmd_end
         ; Success
         deselect
         sec

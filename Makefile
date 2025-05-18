@@ -13,7 +13,8 @@ ASFLAGS += -I inc -g --feature labels_without_colons --cpu 65C02 --feature strin
 DEBUG = -D DEBUG=0
 
 # Set CFG to the config for size of rom
-CFG = rom_load.cfg
+# CFG = rom_load.cfg
+CFG = rom_8k.cfg
 
 RAM_CFG = ram.cfg
 SFM_LOAD_ADDR = 8000
@@ -25,6 +26,7 @@ BUILD_DIR = build
 boot_SOURCES = \
 	       boot/boot.s \
 	       boot/acia.s \
+	       boot/spi.s \
 	       boot/sdcard.s \
 	       boot/sn76489.s \
 	       boot/zerobss.s \

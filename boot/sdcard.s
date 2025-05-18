@@ -13,16 +13,6 @@
 .globalzp bdma_ptr
 .export sector_lba, sdcard_init, sdcard_read_sector
 
-.macro deselect
-        lda     #(SD_CS|SD_MOSI|SN_WE)        ; deselect sdcard
-        sta     via_porta
-.endmacro
-
-.macro select
-        lda     #(SD_MOSI|SN_WE)
-        sta     via_porta
-.endmacro
-
 cmd_idx = sdcard_param
 cmd_arg = sdcard_param + 1
 cmd_crc = sdcard_param + 5
@@ -36,7 +26,6 @@ sector_lba:
         .res 1
 
 timeout_cnt:    .byte 0
-spi_sr:         .byte 0
 
 .segment "BOOTLDR"
 ;-----------------------------------------------------------------------------
@@ -76,62 +65,6 @@ wait_result:
         beq wait_result
         rts
 
-; read a byte over SPI - result in A
-spi_read:
-        pha
-        select
-        pla
-        lda #$ff
-        phx
-        phy
-        jsr spi_rw_byte
-        ply
-        plx
-        pha
-        deselect
-        pla
-        rts
-
-
-; write a byte (A) via SPI
-spi_write:
-        pha
-        select
-        pla
-        phx
-        phy
-        jsr spi_rw_byte
-        ply
-        plx
-        pha
-        deselect
-        pla
-        rts
-
-spi_rw_byte:
-        sta spi_sr
-
-        ldx #$08
-
-        lda via_porta
-        and #$fe
-
-        asl
-        tay
-
-@l:     rol spi_sr
-        tya
-        ror
-
-        sta via_porta
-        inc via_porta
-        sta via_porta
-
-        dex
-        bne @l
-
-        lda via_sr
-        rts
 ;-----------------------------------------------------------------------------
 ; send_cmd - Send cmdbuf
 ;
@@ -226,13 +159,16 @@ sdcard_init:
         lda #%00001100
         sta via_acr
 
-        lda     #(SD_CS|SD_MOSI|SN_WE)        ; toggle clock 160 times
-        ldx     #160
+        jsr spi_ssel_false
+        ldx #160
+        lda via_porta
 @clockloop:
-        eor     #SD_SCK
-        sta     via_porta
+        eor #SD_SCK
+        sta via_porta
         dex
-        bne     @clockloop
+        bne @clockloop
+
+        jsr spi_ssel_true
 
         ; Enter idle state
         send_cmd_inline 0, 0
@@ -282,44 +218,15 @@ sdcard_init:
         jsr spi_read
 
         ; Success
-        deselect
+        jsr spi_ssel_false
         sec
         rts
 
 @error:
         ; Error
-        deselect
+        jsr spi_ssel_false
         clc
         rts
-
-.if DEBUG
-debug_sector_lba:
-        pha
-        lda #13
-        jsr acia_putc
-        lda #10
-        jsr acia_putc
-        pla
-        bne :+
-        lda #'R'
-        bra :++
-:
-        lda #'W'
-:
-        jsr acia_putc
-        jsr bios_printlba
-        lda #'-'
-        jsr acia_putc
-        lda bdma_ptr + 1
-        jsr bios_prbyte
-        lda bdma_ptr + 0
-        jsr bios_prbyte
-        lda #13
-        jsr acia_putc
-        lda #10
-        jsr acia_putc
-        rts
-.endif
 
 ;-----------------------------------------------------------------------------
 ; sdcard_read_sector
@@ -331,6 +238,8 @@ sdcard_read_sector:
         lda #0
         jsr debug_sector_lba
 .endif
+        jsr spi_ssel_true
+
         ; Send READ_SINGLE_BLOCK command
         lda #($40 | 17)
         sta cmd_idx
@@ -350,7 +259,7 @@ sdcard_read_sector:
         bne @1
 
         ; Timeout error
-        deselect
+        jsr spi_ssel_false
         clc
         rts
 
@@ -374,6 +283,6 @@ sdcard_read_sector:
         jsr spi_read
 
         ; Success
-        deselect
+        jsr spi_ssel_false
         sec
         rts

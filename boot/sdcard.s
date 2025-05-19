@@ -39,42 +39,6 @@ timeout_cnt:    .byte 0
 spi_sr:         .byte 0
 
 .segment "BOOTLDR"
-;-----------------------------------------------------------------------------
-; wait ready
-;
-; clobbers: A,X,Y
-;-----------------------------------------------------------------------------
-wait_ready:
-        lda #$F0
-        sta timeout_cnt
-
-@1:     ldx #0          ; 2
-@2:     ldy #0          ; 2
-@3:     jsr spi_read    ; 22
-        cmp #$FF        ; 2
-        beq @done       ; 2 + 1
-        dey             ; 2
-        bne @3          ; 2 + 1
-        dex             ; 2
-        bne @2          ; 2 + 1
-        dec timeout_cnt
-        bne @1
-
-        ; Total timeout: ~508 ms @ 8MHz
-
-        ; Timeout error
-        clc
-        rts
-
-@done:  sec
-        rts
-
-; waits for sdcard to return anything other than FF
-wait_result:
-        jsr spi_read
-        cmp #$FF
-        beq wait_result
-        rts
 
 ; read a byte over SPI - result in A
 spi_read:
@@ -223,8 +187,6 @@ sdcmd_start:
         php
         pha
         phx
-        lda #(SD_MOSI|SN_WE)
-        sta via_porta
         jsr sdcmd_nothingbyte
         jsr sdcmd_nothingbyte
         lda #$ff
@@ -265,6 +227,8 @@ sdcmd_end:
 ; result: C=0 -> error, C=1 -> success
 ;-----------------------------------------------------------------------------
 sdcard_init:
+        php
+        sei
         ; init shift register and port b for SPI use
         ; SR shift in, External clock on CB1
         lda #%00001100
@@ -336,43 +300,16 @@ sdcard_init:
 
         ; Success
         deselect
+        plp
         sec
         rts
 
 @error:
         ; Error
         deselect
+        plp
         clc
         rts
-
-.if DEBUG
-debug_sector_lba:
-        pha
-        lda #13
-        jsr acia_putc
-        lda #10
-        jsr acia_putc
-        pla
-        bne :+
-        lda #'R'
-        bra :++
-:
-        lda #'W'
-:
-        jsr acia_putc
-        jsr bios_printlba
-        lda #'-'
-        jsr acia_putc
-        lda bdma_ptr + 1
-        jsr bios_prbyte
-        lda bdma_ptr + 0
-        jsr bios_prbyte
-        lda #13
-        jsr acia_putc
-        lda #10
-        jsr acia_putc
-        rts
-.endif
 
 ;-----------------------------------------------------------------------------
 ; sdcard_read_sector
@@ -380,10 +317,6 @@ debug_sector_lba:
 ; result: C=0 -> error, C=1 -> success
 ;-----------------------------------------------------------------------------
 sdcard_read_sector:
-.if DEBUG=1
-        lda #0
-        jsr debug_sector_lba
-.endif
         jsr sdcmd_start
         ; Send READ_SINGLE_BLOCK command
         lda #($40 | 17)

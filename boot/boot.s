@@ -93,15 +93,16 @@ bootloader:
     ldx #>start_message
     jsr bios_puts
 
-    ldx #3
+    ldx #10
 @L1:
     phx
     jsr sdcard_init
-    bcc @error
+    bcs @sd_init_ok
     plx
     dex
     bne @L1
 
+@sd_init_ok:
     ; DISABLE ROM
     lda via_porta
     and #%10111111

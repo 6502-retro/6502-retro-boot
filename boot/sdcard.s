@@ -293,17 +293,16 @@ sdcard_init:
         cmp #0
         jsr spi_read
         and #$40        ; Check if this card supports block addressing mode
-        beq @error
-        jsr spi_read
-        jsr spi_read
-        jsr spi_read
-
+        bne @exit_ok
+@9:
+        jsr sdcmd_start
+        send_cmd_inline 16, $00000200
+@exit_ok:
         ; Success
         deselect
         plp
         sec
         rts
-
 @error:
         ; Error
         deselect

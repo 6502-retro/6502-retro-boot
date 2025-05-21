@@ -14,8 +14,8 @@ DEBUG = -D DEBUG=0
 
 # Set CFG to the config for size of rom
 CFG = rom_8k.cfg
-#CFG = rom_load.cfg
-RAM_CFG = ram.cfg
+EMU_CFG = rom_emu.cfg
+
 SFM_LOAD_ADDR = 8000
 
 # Where should the builds be placed
@@ -35,7 +35,8 @@ boot_SOURCES = \
 boot_OBJS = $(addprefix $(BUILD_DIR)/, $(boot_SOURCES:.s=.o))
 
 
-all: clean $(BUILD_DIR)/rom.raw $(BUILD_DIR)/ram.bin
+all: clean $(BUILD_DIR)/rom.raw
+emu: clean $(BUILD_DIR)/rom_emu.img
 
 clean:
 	rm -fr $(BUILD_DIR)/*
@@ -50,16 +51,9 @@ $(BUILD_DIR)/rom.raw: $(boot_OBJS)
 	$(RELIST) $(BUILD_DIR)/rom.map $(BUILD_DIR)/boot
 	$(LOADTRIM) $(BUILD_DIR)/rom.raw $(BUILD_DIR)/rom.bin E000
 
-$(BUILD_DIR)/ram.bin: $(boot_OBJS)
+$(BUILD_DIR)/rom_emu.img: $(boot_OBJS)
 	@mkdir -p $$(dirname $@)
-	$(LD) -C config/$(RAM_CFG) $^ -o $(BUILD_DIR)/ram.raw -m $(BUILD_DIR)/ram.map -Ln $(BUILD_DIR)/ram.sym
-	$(LOADTRIM) $(BUILD_DIR)/ram.raw $@ $(SFM_LOAD_ADDR)
-
-$(BUILD_DIR)/rom_load.bin: $(boot_OBJS)
-	@mkdir -p $$(dirname $@)
-	$(LD) -C config/rom_load.cfg $^ -o $(BUILD_DIR)/rom_load.raw -m $(BUILD_DIR)/rom_load.map -Ln $(BUILD_DIR)/rom_load.sym
-	$(RELIST) $(BUILD_DIR)/rom_load.map $(BUILD_DIR)/boot
-	$(LOADTRIM) $(BUILD_DIR)/rom_load.raw $@ E000
+	$(LD) -C config/rom_emu.cfg $^ -o $@ -m $(BUILD_DIR)/rom_emu.map -Ln $(BUILD_DIR)/rom_emu.sym
 
 grep:
 	grep boot_boot $(BUILD_DIR)/ram.sym

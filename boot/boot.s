@@ -3,7 +3,6 @@
 
 .autoimport
 .globalzp ptr1, bdma_ptr, lba_ptr
-
 .export boot_boot
 .if DEBUG=1
     .export bios_prbyte, bios_printlba
@@ -13,7 +12,7 @@
     lda #10
     jsr bios_conout
     lda #13
-    jsr bios_conout
+
 .endmacro
 
 .zeropage
@@ -101,8 +100,11 @@ bootloader:
     plx
     dex
     bne @L1
+    bra @error
 
 @sd_init_ok:
+    crlf
+
     ; DISABLE ROM
     lda via_porta
     and #%10111111
@@ -127,7 +129,7 @@ error:
     jsr bios_puts
     pla
     jsr bios_conout
-    jmp menu
+    jmp *
 
 
 ; ---- MENU -----------------------------------------------------------------

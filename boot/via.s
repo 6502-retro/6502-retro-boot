@@ -11,7 +11,7 @@
 via_init:
     lda #(SD_SCK|SD_CS|SN_WE|SD_MOSI)
     sta via_porta
-    lda #(SD_SCK|SD_CS|SN_WE|SD_MOSI) ; ROM SWITCH IS ON BY PULLUP NO
+    lda #(SD_SCK|SD_CS|SN_WE|SD_MOSI) ; ROM SWITCH IS ON BY PULLUP
     sta via_ddra
     rts
 

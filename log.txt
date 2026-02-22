@@ -1,0 +1,2 @@
+Loaded 2000 bytes from build/rom.raw into rom
+sdcard.img: No such file or directory

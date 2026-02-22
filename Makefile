@@ -26,6 +26,7 @@ boot_SOURCES = \
 	       boot/boot.s \
 	       boot/acia.s \
 	       boot/sdcard.s \
+				 boot/spi.s \
 	       boot/sn76489.s \
 	       boot/zerobss.s \
 	       boot/via.s \

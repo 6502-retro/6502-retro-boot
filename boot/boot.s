@@ -2,8 +2,10 @@
 .include "io.inc"
 
 .autoimport
-.globalzp ptr1, bdma_ptr, lba_ptr
+.globalzp ptr1, bdma_ptr
+
 .export boot_boot
+
 .if DEBUG=1
     .export bios_prbyte, bios_printlba
 .endif
@@ -12,7 +14,7 @@
     lda #10
     jsr bios_conout
     lda #13
-
+    jsr bios_conout
 .endmacro
 
 .zeropage
@@ -30,6 +32,7 @@ boot_boot:
     txs
     cld
     sei
+;
 ; copy bootloader from rom to run
     lda #<__BOOTLDR_LOAD__
     sta src+0
@@ -178,10 +181,8 @@ load_from_sdcard:
 @sector_loop:
     phx
 
-.if DEBUG=0
     lda #'.'
     jsr bios_conout
-.endif
 
     lda bdma+0
     ldx bdma+1
@@ -194,6 +195,10 @@ load_from_sdcard:
     inc bdma+1          ; Add two pages to bdma
 
     inc sector_lba+0    ; add one to the lba (next sector)
+.if DEBUG=1
+    jsr bios_printlba
+    crlf
+.endif
     plx
     dex
     beq :+

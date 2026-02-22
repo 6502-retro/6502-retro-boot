@@ -44,25 +44,28 @@ spi_sr:
 
 .globalzp bdma_ptr
 
-.code
+.segment "BOOTLDR"
 
 ; TODO: INCLUDE OTHER SPI CS LINES
 sd_cmd_start:
   jsr spi_read  ; 8 clocks without selecting SDCS
-  lda #(SD_CS|SD_MOSI|SN_WE)  ; deselect sdcard
-  sta via_porta
-@loop:
+  select
+  ; wait in case busy
+  ldx #0
+  @loop:
   jsr spi_read
   cmp #$ff
+  beq @done
+  dex
   bne @loop
-  rts
+@done:
+   rts
 
 ; TODO: INCLUDE OTHER SPI CS LINES
 sd_cmd_stop:
   pha
   jsr spi_read  ; 8 clocks with SDCS selected
-  lda #(SD_MOSI|SN_WE) ; deselect sdcard
-  sta via_porta
+  deselect
   jsr spi_read  ; 16 clocks without SDCS selected
   jsr spi_read
   pla
@@ -72,13 +75,13 @@ sd_send_cmd:
   ; Send the 6 cmdbuf bytes
   lda cmd_idx
   jsr spi_write
-  lda cmd_arg + 0
-  jsr spi_write
-  lda cmd_arg + 1
+  lda cmd_arg + 3
   jsr spi_write
   lda cmd_arg + 2
   jsr spi_write
-  lda cmd_arg + 3
+  lda cmd_arg + 1
+  jsr spi_write
+  lda cmd_arg + 0
   jsr spi_write
   lda cmd_crc
   jsr spi_write
@@ -135,16 +138,17 @@ error:
 .endif
   pha
   jsr sd_cmd_stop
+  deselect
   pla
+  plp
   clc
   rts
 
 
 ; send 80 clock cycles with SDCS deselected
 sd_boot:
-  lda #(SD_CS|SD_MOSI|SN_WE) ; deselect sdcard
-  sta via_porta
-  ldx #160
+  deselect
+  ldx #0
 @clockloop:
   eor #SD_SCK
   sta via_porta
@@ -156,10 +160,10 @@ sd_cmd0:
   lda #(0|$40)
   sta cmd_idx
   lda #0
-  sta cmd_arg+0
-  sta cmd_arg+1
-  sta cmd_arg+2
   sta cmd_arg+3
+  sta cmd_arg+2
+  sta cmd_arg+1
+  sta cmd_arg+0
   lda #$95
   sta cmd_crc
   jmp sd_cmd_r1
@@ -168,12 +172,12 @@ sd_cmd8:
   lda #(8|$40)
   sta cmd_idx
   lda #0
-  sta cmd_arg+0
-  sta cmd_arg+1
-  lda #$01
-  sta cmd_arg+2
-  lda #$aa
   sta cmd_arg+3
+  sta cmd_arg+2
+  lda #$01
+  sta cmd_arg+1
+  lda #$aa
+  sta cmd_arg+0
   lda #$87
   sta cmd_crc
   jmp sd_cmd_r7
@@ -182,10 +186,10 @@ sd_cmd58:
   lda #(58|$40)
   sta cmd_idx
   lda #0
-  sta cmd_arg+0
-  sta cmd_arg+1
-  sta cmd_arg+2
   sta cmd_arg+3
+  sta cmd_arg+2
+  sta cmd_arg+1
+  sta cmd_arg+0
   lda #$01
   sta cmd_crc
   jmp sd_cmd_r7   ; same as sd_cmd_r3
@@ -194,10 +198,10 @@ sd_cmd55:
   lda #(55|$40)
   sta cmd_idx
   lda #0
-  sta cmd_arg+0
-  sta cmd_arg+1
-  sta cmd_arg+2
   sta cmd_arg+3
+  sta cmd_arg+2
+  sta cmd_arg+1
+  sta cmd_arg+0
   lda #$01
   sta cmd_crc
   jmp sd_cmd_r1
@@ -208,11 +212,11 @@ sd_acmd41:
   lda #(41|$40)
   sta cmd_idx
   lda #$40
-  sta cmd_arg+0
-  lda #0
-  sta cmd_arg+1
-  sta cmd_arg+2
   sta cmd_arg+3
+  lda #0
+  sta cmd_arg+2
+  sta cmd_arg+1
+  sta cmd_arg+0
   lda #$01
   sta cmd_crc
   jmp sd_cmd_r1
@@ -227,6 +231,7 @@ sd_clk_delay:
   rts
 
 sdcard_init:
+  php
   sei
   ; init shift register and port b for SPI use
   ; SR shift in, External clock on CB1
@@ -292,9 +297,9 @@ boot_hcxc_ok:
   lda #'d'
   jsr acia_putc
 .endif
-
-  cli
+  deselect
   lda #0
+  plp
   sec
   rts
 
@@ -314,15 +319,6 @@ boot_hcxc_ok:
 sdcard_read_sector:
   lda #(17|$40)
   sta cmd_idx
-  lda #$40
-  lda sector_lba+3
-  sta cmd_arg+0
-  lda sector_lba+2
-  sta cmd_arg+1
-  lda sector_lba+1
-  sta cmd_arg+2
-  lda sector_lba+0
-  sta cmd_arg+3
   lda #$01
   sta cmd_crc
   jsr sd_cmd_start
@@ -394,15 +390,6 @@ sdcard_read_sector:
 sdcard_write_sector:
   lda #(24|$40)
   sta cmd_idx
-  lda #$40
-  lda sector_lba+3
-  sta cmd_arg+0
-  lda sector_lba+2
-  sta cmd_arg+1
-  lda sector_lba+1
-  sta cmd_arg+2
-  lda sector_lba+0
-  sta cmd_arg+3
   lda #$01
   sta cmd_crc
   jsr sd_cmd_start

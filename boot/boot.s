@@ -99,7 +99,7 @@ bootloader:
 @L1:
     phx
     jsr sdcard_init
-    bcs @sd_init_ok
+    bcc @sd_init_ok
     plx
     dex
     bne @L1
@@ -167,6 +167,12 @@ load_monitor_rom:
     ; COPY SECTORS FROM SDCARD TO TOP OF RAM (Behind rom)
     ; ROM IS NOW DISABLED
 load_from_sdcard:
+.if DEBUG=1
+    lda #10
+    jsr acia_putc
+    lda #13
+    jsr acia_putc
+.endif
     stz bdma+0
     lda #$e0
     sta bdma+1          ; start writing into rom at E0
@@ -188,17 +194,21 @@ load_from_sdcard:
     ldx bdma+1
     jsr bios_setdma     ; set dma
 
+.if DEBUG=1
+  jsr bios_printlba
+    lda #'-'
+    jsr acia_putc
+    jsr bios_printdma
+    crlf
+.endif
+
     jsr sdcard_read_sector ; read the sector
-    bcc @error
+    bcs @error
 
     inc bdma+1
     inc bdma+1          ; Add two pages to bdma
 
     inc sector_lba+0    ; add one to the lba (next sector)
-.if DEBUG=1
-    jsr bios_printlba
-    crlf
-.endif
     plx
     dex
     beq :+
@@ -209,6 +219,20 @@ load_from_sdcard:
     jsr bios_puts
     jsr sn_beep
 
+.if DEBUG=1
+    lda #'['
+    jsr acia_putc
+    lda $FFFD
+    jsr bios_prbyte
+    lda $FFFC
+    jsr bios_prbyte
+    lda #']'
+    jsr acia_putc
+.endif
+    lda #10
+    jsr acia_putc
+    lda #13
+    jsr acia_putc
     ; JUMP TO THE RESET VECTOR NOW IN TOP OF RAM. (Behind rom)
     jmp ($FFFC)
 @error:
@@ -240,6 +264,19 @@ bios_puts:
     rts
 
 .if DEBUG=1
+bios_printdma:
+  pha
+  phx
+  phy
+  lda bdma_ptr+1
+  jsr bios_prbyte
+  lda bdma_ptr+0
+  jsr bios_prbyte
+  ply
+  plx
+  pla
+  rts
+rts
 bios_printlba:
     pha
     phx
@@ -298,7 +335,7 @@ slice_select_message:   .byte 10,13,"Enter desired slice:"
                         .byte 10,13,"X - Load from XMODEM"
                         .byte 10,13,"> ",0
 
-done_message: .byte 10,13,"BOOT LOADER FINISHED. JUMPING TO OS",10,13,0
+done_message: .byte 10,13,"BOOT LOADER FINISHED. JUMPING TO OS",0
 
 error_message:  .byte 10,13,"*********** ERROR ***********",10,13
                 .byte      "An error occurred.  Error code is: ",0

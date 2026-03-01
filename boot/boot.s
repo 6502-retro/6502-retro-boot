@@ -108,14 +108,8 @@ bootloader:
 @sd_init_ok:
     crlf
 
-    ; DISABLE ROM
-    lda via_porta
-    and #%10111111
-    sta via_porta
-
-    lda via_ddra
-    ora #%01000000 ; make bit 6 an output thus driving a 0.
-    sta via_ddra
+    lda #$80
+    sta rambankreg
 
     jmp menu
 
@@ -155,12 +149,8 @@ load_from_xmodem:
     jmp ($FFFC)
 
 load_monitor_rom:
-    lda #1
-    sta rombankreg
-
-    lda via_ddra
-    and #ROM_SWITCH_OFF
-    sta via_ddra
+    lda #$40
+    sta rambankreg
 
     jmp ($FFFC)
 

@@ -78,12 +78,12 @@ sn_play_note:
 ; Byte to send in A
 sn_send:
     sta via_portb
-    ldx #(SD_SCK|SD_CS|SD_MOSI|SN_WE)
+    ldx #(SD_SCK|SPI_CS2|SPI_CS3|SD_CS|SD_MOSI|SN_WE)
     stx via_porta
-    ldx #(SD_SCK|SD_CS|SD_MOSI)
+    ldx #(SD_SCK|SPI_CS2|SPI_CS3|SD_CS|SD_MOSI)
     stx via_porta
     jsr sn_wait
-    ldx #(SD_SCK|SD_CS|SD_MOSI|SN_WE)
+    ldx #(SD_SCK|SPI_CS2|SPI_CS3|SD_CS|SD_MOSI|SN_WE)
     stx via_porta
     rts
 

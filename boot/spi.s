@@ -7,37 +7,23 @@
 .export spi_read, spi_write, spi_rw_byte
 
 
-.zeropage
-spi_buf_ptr: .res 2
-spi_buf_cnt: .res 2
-
 .bss
 spi_sr: .byte 0
 
 .segment "BOOTLDR"
 
 ; read a byte over SPI - result in A
-.proc spi_read
-  phx
-  phy
+spi_read:
   lda #$ff
-  jsr spi_rw_byte
-  ply
-  plx
-  rts
-.endproc
+  jmp spi_rw_byte
 
 ; write a byte (A) via SPI
-.proc  spi_write
+spi_write:
+  ; fall through
+
+spi_rw_byte:
   phx
   phy
-  jsr spi_rw_byte
-  ply
-  plx
-  rts
-.endproc
-
-.proc spi_rw_byte
   sta spi_sr
 
   ldx #$08
@@ -61,5 +47,6 @@ spi_sr: .byte 0
   bne @l
 
   lda via_sr
+  ply
+  plx
   rts
-.endproc

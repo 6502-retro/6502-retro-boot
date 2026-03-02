@@ -67,7 +67,7 @@ sd_cmd_start:
   jsr spi_read  ; 8 clocks without selecting SDCS
   select
   ; wait in case busy
-;   ldx #$80
+;  ldx #$80
 ; @loop:
 ;   jsr spi_read
 ;   cmp #$ff
@@ -516,5 +516,5 @@ sdcard_write_sector:
 @sd_cmd24_ok:
   jsr sd_cmd_stop
   lda #0; return 0 for success
-  clc   ; with carry set in case someone wants that instead
+  clc   ; with carry clear in case someone wants that instead
   rts

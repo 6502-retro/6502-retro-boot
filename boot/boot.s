@@ -149,8 +149,10 @@ load_from_xmodem:
     jmp ($FFFC)
 
 load_monitor_rom:
-    lda #$40
+    lda #%01000000
     sta rambankreg
+    nop
+    nop
 
     jmp ($FFFC)
 
@@ -266,55 +268,55 @@ bios_printdma:
   plx
   pla
   rts
-rts
+  rts
 bios_printlba:
-    pha
-    phx
-    phy
+  pha
+  phx
+  phy
 
-    lda sector_lba + 3
-    jsr bios_prbyte
-    lda sector_lba + 2
-    jsr bios_prbyte
-    lda sector_lba + 1
-    jsr bios_prbyte
-    lda sector_lba + 0
-    jsr bios_prbyte
+  lda sector_lba + 3
+  jsr bios_prbyte
+  lda sector_lba + 2
+  jsr bios_prbyte
+  lda sector_lba + 1
+  jsr bios_prbyte
+  lda sector_lba + 0
+  jsr bios_prbyte
 
-    ply
-    plx
-    pla
-    rts
+  ply
+  plx
+  pla
+  rts
 
 bios_prbyte:
-    pha             ;Save A for LSD.
-    lsr
-    lsr
-    lsr             ;MSD to LSD position.
-    lsr
-    jsr prhex       ;Output hex digit.
-    pla             ;Restore A.
+  pha             ;Save A for LSD.
+  lsr
+  lsr
+  lsr             ;MSD to LSD position.
+  lsr
+  jsr prhex       ;Output hex digit.
+  pla             ;Restore A.
 prhex:
-    and #$0F        ;Mask LSD for hex print.
-    ora #$B0        ;Add "0".
-    cmp #$BA        ;Digit?
-    bcc echo        ;Yes, output it.
-    adc #$06        ;Add offset for letter.
+  and #$0F        ;Mask LSD for hex print.
+  ora #$B0        ;Add "0".
+  cmp #$BA        ;Digit?
+  bcc echo        ;Yes, output it.
+  adc #$06        ;Add offset for letter.
 echo:
-    pha             ;*Save A
-    and #$7F        ;*Change to "standard ASCII"
-    jsr acia_putc
-    pla             ;*Restore A
-    rts             ;*Done, over and out...
+  pha             ;*Save A
+  and #$7F        ;*Change to "standard ASCII"
+  jsr acia_putc
+  pla             ;*Restore A
+  rts             ;*Done, over and out...
 .endif
 
 ;---- Helper functions -------------------------------------------------------
 zero_lba:
-    stz sector_lba + 0 ; sector inside file
-    stz sector_lba + 1 ; file number
-    stz sector_lba + 2 ; drive number
-    stz sector_lba + 3 ; always zero
-    rts
+  stz sector_lba + 0 ; sector inside file
+  stz sector_lba + 1 ; file number
+  stz sector_lba + 2 ; drive number
+  stz sector_lba + 3 ; always zero
+  rts
 
 start_message:  .byte 10,13,"6502-Retro Bootloader Utility",10,13
                 .byte      "-----------------------------",10,13,0

@@ -1,9 +1,6 @@
 # Assembler, linker and scripts
 AS = ca65
 LD = ld65
-RELIST = scripts/relist.py
-FINDSYM = scripts/findsymbols
-LOADTRIM = scripts/loadtrim.py
 TTY_DEVICE = /dev/ttyUSB0
 
 # Assembler flags
@@ -14,7 +11,6 @@ DEBUG = -D DEBUG=0
 
 # Set CFG to the config for size of rom
 CFG = rom_8k.cfg
-EMU_CFG = rom_emu.cfg
 
 SFM_LOAD_ADDR = 8000
 
@@ -36,8 +32,7 @@ boot_SOURCES = \
 boot_OBJS = $(addprefix $(BUILD_DIR)/, $(boot_SOURCES:.s=.o))
 
 
-all: clean $(BUILD_DIR)/rom.raw
-emu: clean $(BUILD_DIR)/rom_emu.img
+all: clean $(BUILD_DIR)/rom.img
 
 clean:
 	rm -fr $(BUILD_DIR)/*
@@ -49,16 +44,7 @@ $(BUILD_DIR)/%.o: %.s
 $(BUILD_DIR)/rom.raw: $(boot_OBJS)
 	@mkdir -p $$(dirname $@)
 	$(LD) -C config/$(CFG) $^ -o $@ -m $(BUILD_DIR)/rom.map -Ln $(BUILD_DIR)/rom.sym
-	$(RELIST) $(BUILD_DIR)/rom.map $(BUILD_DIR)/boot
-	$(LOADTRIM) $(BUILD_DIR)/rom.raw $(BUILD_DIR)/rom.bin E000
 
-$(BUILD_DIR)/rom_emu.img: $(boot_OBJS)
-	@mkdir -p $$(dirname $@)
-	$(LD) -C config/rom_emu.cfg $^ -o $@ -m $(BUILD_DIR)/rom_emu.map -Ln $(BUILD_DIR)/rom_emu.sym
+$(BUILD_DIR)/rom.img: $(BUILD_DIR)/rom.raw
+	cat $^ ../6502-retro-monitor/build/bankmon.raw > $@
 
-grep:
-	grep boot_boot $(BUILD_DIR)/ram.sym
-
-minipro:
-	cat build/rom.raw ../6502-retro-monitor/build/bankmon.raw > build/rom.img
-	minipro -s -p SST27SF512@DIP28 -w build/rom.img

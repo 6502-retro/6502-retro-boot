@@ -18,3 +18,10 @@ the last thing at 0xFFFA.  Thus the binary image is exactly 8192 bytes long.
 The loader will then indirect jump to the reset vector at 0xFFFC
 
 And that's it.
+
+## About the rom image
+
+The rom image created with `make` is set up to be located at the back 8k each
+half of a 64KB 27SF512 EEPROM. The first half contains the bootloader described
+above and the second half contains a simple monitor program.
+[https://github.com/6502-retro/6502-retro-monitor.git](https://github.com/6502-retro/6502-retro-monitor.git)

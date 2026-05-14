@@ -19,15 +19,15 @@ BUILD_DIR = build
 
 # Sources and objects
 boot_SOURCES = \
-	       boot/boot.s \
-	       boot/acia.s \
-	       boot/sdcard.s \
-				 boot/spi.s \
-	       boot/sn76489.s \
-	       boot/zerobss.s \
-	       boot/via.s \
-	       boot/xm.s \
-	       boot/vectors.s \
+							 boot/boot.s \
+							 boot/acia.s \
+							 boot/sdcard.s \
+							 boot/spi.s \
+							 boot/sn76489.s \
+							 boot/zerobss.s \
+							 boot/via.s \
+							 boot/xm.s \
+							 boot/vectors.s \
 
 boot_OBJS = $(addprefix $(BUILD_DIR)/, $(boot_SOURCES:.s=.o))
 
@@ -48,3 +48,11 @@ $(BUILD_DIR)/rom.raw: $(boot_OBJS)
 $(BUILD_DIR)/rom.img: $(BUILD_DIR)/rom.raw
 	cat $^ ../6502-retro-monitor/build/bankmon.raw > $@
 
+grep:
+	grep boot_boot $(BUILD_DIR)/ram.sym
+
+combined:
+	cat build/rom.raw ../6502-retro-monitor/build/bankmon.raw > build/rom.img
+
+minipro: combined
+	minipro -s -p SST27SF512@DIP28 -w build/rom.img
